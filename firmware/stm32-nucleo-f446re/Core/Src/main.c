@@ -55,6 +55,26 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 
+uint8_t rxByte;
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+	{
+		if (huart -> Instance == USART2)
+		{
+			if (rxByte == 1)
+			{
+				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+			}
+
+			if (rxByte == 0)
+			{
+				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+			}
+
+		HAL_UART_Receive_IT(&huart2, &rxByte, 1);
+		}
+	}
+
 //typedef struct
 //{
 //	float temp;
@@ -79,6 +99,7 @@ static void MX_USART2_UART_Init(void);
 //
 //	return data;
 //};
+
 void generateTelemetry(char *buffer) {
 	static int temp = 23;
 	static int hum = 50;
@@ -127,6 +148,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART2_UART_Init();
+  HAL_UART_Receive_IT(&huart2, &rxByte, 1);
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */

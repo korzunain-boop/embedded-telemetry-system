@@ -1,7 +1,0 @@
-Debug/
-Release/
-*.o
-*.d
-.metadata/
-__pycache__/
-*.pyc
