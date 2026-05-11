@@ -1,6 +1,6 @@
 import serial
 
-SERIAL_PORT = "COM3"
+SERIAL_PORT = "COM9"
 BAUDRATE = 115200
 
 
