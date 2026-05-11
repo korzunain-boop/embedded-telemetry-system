@@ -55,24 +55,83 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 
-uint8_t rxByte;
+char rxBuffer[64];
+char rxByte;
+
+
+void sendMessage(char *msg)
+	{
+	HAL_UART_Transmit(
+			&huart2,
+			(uint8_t *) msg,
+			strlen(msg),
+			100);
+	}
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	{
-		if (huart -> Instance == USART2)
+		static uint8_t index = 0;
+
+		if (rxByte == '\r')
 		{
-			if (rxByte == 1)
-			{
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
-			}
-
-			if (rxByte == 0)
-			{
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
-			}
-
-		HAL_UART_Receive_IT(&huart2, &rxByte, 1);
+			HAL_UART_Receive_IT(&huart2, &rxByte, 1);
+			memset(rxBuffer, 0, sizeof(rxBuffer));
+			return;
 		}
+
+		if (rxByte != '\n')
+		{
+			rxBuffer[index] = rxByte;
+
+			index++;
+
+			if (index >= sizeof(rxBuffer) - 1)
+			{
+				index = 0;
+			}
+		}
+		else
+		{
+			rxBuffer[index] = '\0';
+			static uint8_t ledStatus = 0;
+
+			if (huart -> Instance == USART2)
+			{
+				if (strcmp(rxBuffer, "LED ON") == 0)
+				{
+					memset(rxBuffer, 0, sizeof(rxBuffer));
+					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+					ledStatus = 1;
+					sendMessage("OK\r\n");
+				}
+
+				else if (strcmp(rxBuffer, "LED OFF") == 0)
+				{
+					memset(rxBuffer, 0, sizeof(rxBuffer));
+					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+					ledStatus = 0;
+					sendMessage("OK\r\n");
+				}
+
+				else if (strcmp(rxBuffer, "STATUS") == 0)
+				{
+					memset(rxBuffer, 0, sizeof(rxBuffer));
+					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+//					printf("LED Status - %d\r\n", ledStatus);
+					char message[20];
+					sprintf(message, "LED Status - %u\r\n", ledStatus);
+					sendMessage(message);
+				}
+				else
+				{
+					sendMessage("Unknown command\r\n");
+					memset(rxBuffer, 0, sizeof(rxBuffer));
+				}
+
+				index = 0;
+			}
+		}
+		HAL_UART_Receive_IT(&huart2, &rxByte, 1);
 	}
 
 //typedef struct

@@ -2,9 +2,12 @@ import serial
 import time
 
 ser = serial.Serial("COM9", 115200)
+ser.reset_input_buffer
 
-while 1:
-    ser.write(b'0')
-    time.sleep(0.500)
-    ser.write(b'1')
-    time.sleep(0.500)
+while True:
+    command = input("Command: ")
+
+    ser.write((command + "\n").encode())
+    response = ser.readline().decode().strip()
+
+    print("STM32: " + response)
